@@ -1,12 +1,13 @@
-# %% [markdown]
-# # 3. Analítica (Capa Oro)
-# Agregaciones de negocio.
-
-# %%
+# =========================
+# LAB SECOP - ORO
+# =========================
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import sum, desc, col
-from delta import *
+from pyspark.sql.functions import sum, desc
+from delta import configure_spark_with_delta_pip
 
+# =========================
+# 🔧 CONFIGURACIÓN SPARK + DELTA
+# =========================
 builder = SparkSession.builder \
     .appName("Lab_SECOP_Gold") \
     .master("spark://spark-master:7077") \
@@ -15,25 +16,32 @@ builder = SparkSession.builder \
     .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
 
 spark = configure_spark_with_delta_pip(builder).getOrCreate()
+print("✅ Sesión Spark con Delta configurada")
 
-# %%
-# Leer Plata
-df_silver = spark.read.format("delta").load("data/lakehouse/silver/secop")
+# =========================
+# 📥 LEER SILVER
+# =========================
+df_silver = spark.read.format("delta").load("/app/data/lakehouse/silver/secop")
+print(f"✅ Silver leído: {df_silver.count()} registros")
 
-# %%
-# Agregación (Shuffle)
+# =========================
+# AGREGACIÓN (TOP 10 DEPARTAMENTOS POR CONTRATO)
+# =========================
 df_gold = df_silver \
     .groupBy("departamento") \
-    .agg(sum("precio_base").alias("total_contratado")) \
+    .agg(sum("valor_del_contrato").alias("total_contratado")) \
     .orderBy(desc("total_contratado")) \
     .limit(10)
 
-# %%
-# Persistir Oro
-df_gold.write.format("delta").mode("overwrite").save("data/lakehouse/gold/top_deptos")
+# =========================
+# PERSISTIR ORO
+# =========================
+df_gold.write.format("delta").mode("overwrite").save("/app/data/lakehouse/gold/top_deptos")
+print("✅ Capa Oro generada correctamente")
 
-# %%
-# Visualizar
+# =========================
+# VISUALIZAR
+# =========================
 print("Top 10 Departamentos por contratación:")
 df_pandas = df_gold.toPandas()
 print(df_pandas)

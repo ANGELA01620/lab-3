@@ -12,6 +12,8 @@ services:
       - "7077:7077" # Puerto Spark
     environment:
       - SPARK_NO_DAEMONIZE=true
+    volumes:
+      - ./data:/app/data
 
   # --- NODO 2: WORKER ---
   spark-worker:
@@ -21,6 +23,8 @@ services:
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     depends_on:
       - spark-master
+    volumes:
+      - ./data:/app/data
     environment:
       - SPARK_WORKER_CORES=2
       - SPARK_WORKER_MEMORY=2G
@@ -31,7 +35,7 @@ services:
     build: .
     container_name: jupyter-lab
     ports:
-      - "8888:8888" # Acceso al notebook
+      - "8889:8888" # Acceso al notebook
       - "4040:4040" # Monitor de Jobs
     volumes:
       - ./data:/app/data
